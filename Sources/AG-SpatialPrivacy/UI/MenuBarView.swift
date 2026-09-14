@@ -6,309 +6,325 @@ public struct MenuBarView: View {
     public init() {}
 
     public var body: some View {
-        VStack(spacing: 12) {
-            // Header Bar
-            HStack(spacing: 10) {
-                Image(systemName: "shield.lefthalf.filled")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.blue, .cyan],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 8) {
+                // Header Bar
+                HStack(spacing: 8) {
+                    Image(systemName: "shield.lefthalf.filled")
+                        .font(.system(size: 19, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .cyan],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("AG-SpatialPrivacy")
+                            .font(.system(size: 13, weight: .bold))
+                        Text("Spatial Gaze Privacy for macOS")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $settings.isEnabled)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .controlSize(.small)
+                        .onChange(of: settings.isEnabled) { _, _ in
+                            settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                        }
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 2)
+
+                // 1. Device Status & Calibration Card
+                HStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(connectionColor)
+                            .frame(width: 7, height: 7)
+                            .shadow(color: connectionColor.opacity(0.5), radius: 2)
+
+                        Text(connectionText)
+                            .font(.system(size: 11, weight: .medium))
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        settings.calibrateCenter()
+                    }) {
+                        Label("Calibrate Center", systemImage: "scope")
+                            .font(.system(size: 10.5, weight: .medium))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 9)
+                .padding(.vertical, 7)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(NSColor.separatorColor).opacity(0.25), lineWidth: 0.5)
+                )
+
+                // 2. Live Head Orientation Gauge Card
+                AngleGaugeView(settings: settings)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 7)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(NSColor.separatorColor).opacity(0.25), lineWidth: 0.5)
                     )
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("AG-SpatialPrivacy")
-                        .font(.system(size: 14, weight: .bold))
-                    Text("Spatial Gaze Privacy for macOS")
-                        .font(.system(size: 10.5))
-                        .foregroundColor(.secondary)
-                }
+                // 3. Test Simulation Slider Card (Only visible in Manual Simulation mode)
+                if settings.trackingSource == .manualDemo {
+                    VStack(alignment: .leading, spacing: 5) {
+                        HStack {
+                            Label("Simulation Test Slider", systemImage: "slider.horizontal.3")
+                                .font(.system(size: 11, weight: .semibold))
 
-                Spacer()
+                            Spacer()
 
-                Toggle("", isOn: $settings.isEnabled)
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                    .onChange(of: settings.isEnabled) { _, _ in
-                        settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                            Text(String(format: "%+.1f°", settings.manualYawDegrees))
+                                .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                                .foregroundColor(.cyan)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Color.cyan.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+
+                        Slider(value: $settings.manualYawDegrees, in: -45...45, step: 0.5)
+                            .labelsHidden()
+                            .controlSize(.small)
+                            .onChange(of: settings.manualYawDegrees) { _, newVal in
+                                settings.updateManualYaw(degrees: newVal)
+                            }
+
+                        HStack {
+                            Text("← Look Left (-45°)")
+                                .font(.system(size: 8.5))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("Look Right (+45°) →")
+                                .font(.system(size: 8.5))
+                                .foregroundColor(.secondary)
+                        }
                     }
-            }
-            .padding(.horizontal, 4)
-
-            // 1. Device Status & Calibration Card
-            HStack(spacing: 10) {
-                HStack(spacing: 7) {
-                    Circle()
-                        .fill(connectionColor)
-                        .frame(width: 8, height: 8)
-                        .shadow(color: connectionColor.opacity(0.6), radius: 3)
-
-                    Text(connectionText)
-                        .font(.system(size: 11.5, weight: .medium))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 7)
+                    .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color(NSColor.separatorColor).opacity(0.25), lineWidth: 0.5)
+                    )
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity.combined(with: .scale(scale: 0.95))
+                    ))
                 }
 
-                Spacer()
-
-                Button(action: {
-                    settings.calibrateCenter()
-                }) {
-                    Label("Calibrate Center", systemImage: "scope")
-                        .font(.system(size: 11, weight: .medium))
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-            }
-            .padding(10)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 9))
-            .overlay(
-                RoundedRectangle(cornerRadius: 9)
-                    .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
-            )
-
-            // 2. Live Head Orientation Gauge Card
-            AngleGaugeView(settings: settings)
-                .padding(10)
-                .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-                .clipShape(RoundedRectangle(cornerRadius: 9))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 9)
-                        .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
-                )
-
-            // 3. Test Simulation Slider Card (Only visible in Manual Simulation mode)
-            if settings.trackingSource == .manualDemo {
-                VStack(alignment: .leading, spacing: 6) {
+                // 4. Configuration Preferences Card
+                VStack(spacing: 7) {
+                    // Tracking Source Picker
                     HStack {
-                        Label("Simulation Test Slider", systemImage: "slider.horizontal.3")
-                            .font(.system(size: 11.5, weight: .semibold))
-
+                        Label("Tracking Source", systemImage: "antenna.radiowaves.left.and.right")
+                            .font(.system(size: 11))
                         Spacer()
+                        Picker("", selection: $settings.trackingSource) {
+                            ForEach(TrackingSource.allCases) { source in
+                                Label(source.rawValue, systemImage: source.icon)
+                                    .tag(source)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 175)
+                        .onChange(of: settings.trackingSource) { _, newSource in
+                            handleTrackingSourceChange(newSource)
+                        }
+                    }
 
-                        Text(String(format: "%+.1f°", settings.manualYawDegrees))
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(.cyan)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 1.5)
-                            .background(Color.cyan.opacity(0.12))
+                    Divider()
+                        .padding(.vertical, -1)
+
+                    // Privacy Mode Picker
+                    HStack {
+                        Label("Privacy Mode", systemImage: "lock.shield")
+                            .font(.system(size: 11))
+                        Spacer()
+                        Picker("", selection: $settings.blurDirectionMode) {
+                            ForEach(BlurDirectionMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 175)
+                    }
+
+                    Divider()
+                        .padding(.vertical, -1)
+
+                    // Blur Appearance Style Picker
+                    HStack {
+                        Label("Blur Appearance", systemImage: "sparkles")
+                            .font(.system(size: 11))
+                        Spacer()
+                        Picker("", selection: $settings.blurStyle) {
+                            ForEach(BlurStyle.allCases) { style in
+                                Text(style.rawValue).tag(style)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 175)
+                    }
+
+                    Divider()
+                        .padding(.vertical, -1)
+
+                    // Sensitivity Threshold Slider
+                    VStack(spacing: 2) {
+                        HStack {
+                            Label("Sensitivity", systemImage: "speedometer")
+                                .font(.system(size: 11))
+                            Spacer()
+                            if settings.sensitivityDegrees != 30.0 {
+                                Button(action: {
+                                    settings.sensitivityDegrees = 30.0
+                                    settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                                }) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.cyan)
+                                }
+                                .buttonStyle(.plain)
+                                .help("Reset sensitivity to default (30°)")
+                            }
+                            Text("\(Int(settings.sensitivityDegrees))°")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.secondary)
+                        }
+                        Slider(value: $settings.sensitivityDegrees, in: 10...60, step: 1)
+                            .labelsHidden()
+                            .controlSize(.small)
+                            .onChange(of: settings.sensitivityDegrees) { _, _ in
+                                settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                            }
+                    }
+
+                    Divider()
+                        .padding(.vertical, -1)
+
+                    // Center Deadzone Slider
+                    VStack(spacing: 2) {
+                        HStack {
+                            Label("Center Deadzone", systemImage: "circle.circle")
+                                .font(.system(size: 11))
+                            Spacer()
+                            if settings.deadzoneDegrees != 5.0 {
+                                Button(action: {
+                                    settings.deadzoneDegrees = 5.0
+                                    settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                                }) {
+                                    Image(systemName: "arrow.counterclockwise")
+                                        .font(.system(size: 8.5, weight: .bold))
+                                        .foregroundColor(.cyan)
+                                }
+                                .buttonStyle(.plain)
+                                .help("Reset deadzone to default (5°)")
+                            }
+                            Text("\(Int(settings.deadzoneDegrees))°")
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .foregroundColor(.secondary)
+                        }
+                        Slider(value: $settings.deadzoneDegrees, in: 1...15, step: 1)
+                            .labelsHidden()
+                            .controlSize(.small)
+                            .onChange(of: settings.deadzoneDegrees) { _, _ in
+                                settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                            }
+                    }
+
+                    // Default Reset Button for Sliders
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            settings.sensitivityDegrees = 30.0
+                            settings.deadzoneDegrees = 5.0
+                            settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                        }) {
+                            HStack(spacing: 3) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 8.5, weight: .bold))
+                                Text("Reset to Defaults (30° / 5°)")
+                                    .font(.system(size: 9.5, weight: .medium))
+                            }
+                            .foregroundColor(isCustomThresholds ? .cyan : .secondary)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2.5)
+                            .background(Color(NSColor.windowBackgroundColor).opacity(0.7))
                             .clipShape(Capsule())
-                    }
-
-                    Slider(value: $settings.manualYawDegrees, in: -45...45, step: 0.5)
-                        .labelsHidden()
-                        .onChange(of: settings.manualYawDegrees) { _, newVal in
-                            settings.updateManualYaw(degrees: newVal)
+                            .overlay(
+                                Capsule()
+                                    .stroke(isCustomThresholds ? Color.cyan.opacity(0.35) : Color.secondary.opacity(0.18), lineWidth: 0.5)
+                            )
                         }
-
-                    HStack {
-                        Text("← Look Left (-45°)")
-                            .font(.system(size: 9))
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text("Look Right (+45°) →")
-                            .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                        .buttonStyle(.plain)
+                        .disabled(!isCustomThresholds)
                     }
+                    .padding(.top, 1)
                 }
-                .padding(10)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 7)
                 .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 9)
-                        .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(NSColor.separatorColor).opacity(0.25), lineWidth: 0.5)
                 )
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .move(edge: .top)),
-                    removal: .opacity.combined(with: .scale(scale: 0.95))
-                ))
-            }
 
-            // 4. Configuration Preferences Card
-            VStack(spacing: 10) {
-                // Tracking Source Picker
+                // 5. Footer
                 HStack {
-                    Label("Tracking Source", systemImage: "antenna.radiowaves.left.and.right")
-                        .font(.system(size: 11.5))
-                    Spacer()
-                    Picker("", selection: $settings.trackingSource) {
-                        ForEach(TrackingSource.allCases) { source in
-                            Label(source.rawValue, systemImage: source.icon)
-                                .tag(source)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(minWidth: 180, maxWidth: 200)
-                    .onChange(of: settings.trackingSource) { _, newSource in
-                        handleTrackingSourceChange(newSource)
-                    }
-                }
-
-                Divider()
-
-                // Privacy Mode Picker
-                HStack {
-                    Label("Privacy Mode", systemImage: "lock.shield")
-                        .font(.system(size: 11.5))
-                    Spacer()
-                    Picker("", selection: $settings.blurDirectionMode) {
-                        ForEach(BlurDirectionMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(minWidth: 180, maxWidth: 200)
-                }
-
-                Divider()
-
-                // Blur Appearance Style Picker
-                HStack {
-                    Label("Blur Appearance", systemImage: "sparkles")
-                        .font(.system(size: 11.5))
-                    Spacer()
-                    Picker("", selection: $settings.blurStyle) {
-                        ForEach(BlurStyle.allCases) { style in
-                            Text(style.rawValue).tag(style)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(minWidth: 180, maxWidth: 200)
-                }
-
-                Divider()
-
-                // Sensitivity Threshold Slider
-                VStack(spacing: 3) {
-                    HStack {
-                        Label("Sensitivity (Threshold)", systemImage: "speedometer")
-                            .font(.system(size: 11.5))
-                        Spacer()
-                        if settings.sensitivityDegrees != 30.0 {
-                            Button(action: {
-                                settings.sensitivityDegrees = 30.0
-                                settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
-                            }) {
-                                Image(systemName: "arrow.counterclockwise")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(.cyan)
-                            }
-                            .buttonStyle(.plain)
-                            .help("Reset sensitivity to default (30°)")
-                        }
-                        Text("\(Int(settings.sensitivityDegrees))°")
-                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.secondary)
-                    }
-                    Slider(value: $settings.sensitivityDegrees, in: 10...60, step: 1)
-                        .labelsHidden()
-                        .onChange(of: settings.sensitivityDegrees) { _, _ in
-                            settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
-                        }
-                }
-
-                Divider()
-
-                // Center Deadzone Slider
-                VStack(spacing: 3) {
-                    HStack {
-                        Label("Center Deadzone", systemImage: "circle.circle")
-                            .font(.system(size: 11.5))
-                        Spacer()
-                        if settings.deadzoneDegrees != 5.0 {
-                            Button(action: {
-                                settings.deadzoneDegrees = 5.0
-                                settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
-                            }) {
-                                Image(systemName: "arrow.counterclockwise")
-                                    .font(.system(size: 9, weight: .bold))
-                                    .foregroundColor(.cyan)
-                            }
-                            .buttonStyle(.plain)
-                            .help("Reset deadzone to default (5°)")
-                        }
-                        Text("\(Int(settings.deadzoneDegrees))°")
-                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.secondary)
-                    }
-                    Slider(value: $settings.deadzoneDegrees, in: 1...15, step: 1)
-                        .labelsHidden()
-                        .onChange(of: settings.deadzoneDegrees) { _, _ in
-                            settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
-                        }
-                }
-
-                // Default Reset Button for Sliders
-                HStack {
-                    Spacer()
                     Button(action: {
+                        settings.resetAngles()
                         settings.sensitivityDegrees = 30.0
                         settings.deadzoneDegrees = 5.0
-                        settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                        settings.blurDirectionMode = .oppositeGaze
+                        settings.blurStyle = .frostedDark
                     }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.counterclockwise")
-                                .font(.system(size: 9, weight: .bold))
-                            Text("Reset to Defaults (30° / 5°)")
-                                .font(.system(size: 10, weight: .medium))
-                        }
-                        .foregroundColor(isCustomThresholds ? .cyan : .secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(isCustomThresholds ? Color.cyan.opacity(0.35) : Color.secondary.opacity(0.2), lineWidth: 0.5)
-                        )
+                        Text("Reset Defaults")
+                            .font(.system(size: 10.5))
                     }
                     .buttonStyle(.plain)
-                    .disabled(!isCustomThresholds)
+                    .foregroundColor(.secondary)
+
+                    Spacer()
+
+                    Button(action: {
+                        NSApplication.shared.terminate(nil)
+                    }) {
+                        Text("Quit AG-SpatialPrivacy")
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundColor(.red.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .padding(.top, 2)
+                .padding(.horizontal, 4)
+                .padding(.top, 1)
             }
             .padding(10)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 9))
-            .overlay(
-                RoundedRectangle(cornerRadius: 9)
-                    .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
-            )
-
-            // 5. Footer
-            HStack {
-                Button(action: {
-                    settings.resetAngles()
-                    settings.sensitivityDegrees = 30.0
-                    settings.deadzoneDegrees = 5.0
-                    settings.blurDirectionMode = .oppositeGaze
-                    settings.blurStyle = .frostedDark
-                }) {
-                    Text("Reset Defaults")
-                        .font(.system(size: 11))
-                }
-                .buttonStyle(.plain)
-                .foregroundColor(.secondary)
-
-                Spacer()
-
-                Button(action: {
-                    NSApplication.shared.terminate(nil)
-                }) {
-                    Text("Quit AG-SpatialPrivacy")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.red.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 4)
-            .padding(.top, 2)
         }
-        .padding(14)
-        .frame(width: 380)
-        .animation(.easeInOut(duration: 0.22), value: settings.trackingSource)
+        .frame(width: 360)
+        .frame(maxHeight: 460)
+        .animation(.easeInOut(duration: 0.2), value: settings.trackingSource)
     }
 
     private var isCustomThresholds: Bool {

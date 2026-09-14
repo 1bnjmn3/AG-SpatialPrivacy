@@ -39,7 +39,6 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupPopover() {
         let popover = NSPopover()
-        popover.contentSize = NSSize(width: 380, height: 530)
         popover.behavior = .transient
         popover.animates = true
         popover.contentViewController = NSHostingController(rootView: MenuBarView())
@@ -63,6 +62,13 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showPopover(_ button: NSStatusBarButton) {
+        if let hosting = popover.contentViewController as? NSHostingController<MenuBarView> {
+            let size = hosting.view.fittingSize
+            let targetHeight = min(460, max(300, size.height))
+            popover.contentSize = NSSize(width: 360, height: targetHeight)
+        } else {
+            popover.contentSize = NSSize(width: 360, height: 400)
+        }
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
         popover.contentViewController?.view.window?.makeKey()
     }

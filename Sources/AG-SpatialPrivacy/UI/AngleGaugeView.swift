@@ -101,20 +101,20 @@ public struct AngleGaugeView: View {
                         .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
                 )
             }
-            .frame(height: 20)
+            .frame(height: 16)
 
             // Scale Labels
             HStack {
                 Text("← 50° L")
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 8.5, weight: .medium))
                     .foregroundColor(.secondary)
                 Spacer()
                 Text("Center 0°")
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 8.5, weight: .medium))
                     .foregroundColor(.secondary)
                 Spacer()
                 Text("50° R →")
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 8.5, weight: .medium))
                     .foregroundColor(.secondary)
             }
         }
