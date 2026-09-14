@@ -28,6 +28,9 @@ cp Resources/Info.plist "${CONTENTS_DIR}/Info.plist"
 if [ -f Resources/AppIcon.icns ]; then
     cp Resources/AppIcon.icns "${RESOURCES_DIR}/AppIcon.icns"
 fi
+if [ -f Resources/AppIcon.png ]; then
+    cp Resources/AppIcon.png "${RESOURCES_DIR}/AppIcon.png"
+fi
 
 # Code sign (ad-hoc)
 echo "🔐 Ad-hoc code signing..."

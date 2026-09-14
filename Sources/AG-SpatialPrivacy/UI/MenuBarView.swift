@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct MenuBarView: View {
     @ObservedObject var settings: BlurSettings = BlurSettings.shared
+    @ObservedObject var launchManager: LaunchAtLoginManager = LaunchAtLoginManager.shared
 
     public init() {}
 
@@ -10,15 +11,24 @@ public struct MenuBarView: View {
             VStack(spacing: 8) {
                 // Header Bar
                 HStack(spacing: 8) {
-                    Image(systemName: "shield.lefthalf.filled")
-                        .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.blue, .cyan],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                    if let appIcon = NSApp.applicationIconImage {
+                        Image(nsImage: appIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 22, height: 22)
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
+                            .shadow(radius: 1)
+                    } else {
+                        Image(systemName: "shield.lefthalf.filled")
+                            .font(.system(size: 19, weight: .bold))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .cyan],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
+                    }
 
                     VStack(alignment: .leading, spacing: 1) {
                         Text("AG-SpatialPrivacy")
@@ -251,6 +261,23 @@ public struct MenuBarView: View {
                             .onChange(of: settings.deadzoneDegrees) { _, _ in
                                 settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
                             }
+                    }
+
+                    Divider()
+                        .padding(.vertical, -1)
+
+                    // Start on Startup Toggle
+                    HStack {
+                        Label("Start on Startup", systemImage: "arrow.clockwise.circle")
+                            .font(.system(size: 11))
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { launchManager.isEnabled },
+                            set: { launchManager.setEnabled($0) }
+                        ))
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .controlSize(.small)
                     }
 
                     // Default Reset Button for Sliders

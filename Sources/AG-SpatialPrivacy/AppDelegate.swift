@@ -22,6 +22,9 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Start motion tracking via AirPods by default
         AirPodsTracker.shared.start()
+
+        // Ensure app is configured to start on macOS startup
+        LaunchAtLoginManager.shared.registerOnStartup()
     }
 
     private func setupStatusItem() {
