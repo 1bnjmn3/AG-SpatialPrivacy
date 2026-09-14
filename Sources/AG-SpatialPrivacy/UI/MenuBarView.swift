@@ -79,49 +79,52 @@ public struct MenuBarView: View {
                         .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
                 )
 
-            // 3. Test Simulation Slider Card
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Label("Test Simulation Slider", systemImage: "slider.horizontal.3")
-                        .font(.system(size: 11.5, weight: .semibold))
+            // 3. Test Simulation Slider Card (Only visible in Manual Simulation mode)
+            if settings.trackingSource == .manualDemo {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Label("Simulation Test Slider", systemImage: "slider.horizontal.3")
+                            .font(.system(size: 11.5, weight: .semibold))
 
-                    Spacer()
+                        Spacer()
 
-                    Text(String(format: "%+.1f°", settings.manualYawDegrees))
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.cyan)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 1.5)
-                        .background(Color.cyan.opacity(0.12))
-                        .clipShape(Capsule())
-                }
-
-                Slider(value: $settings.manualYawDegrees, in: -45...45, step: 0.5)
-                    .labelsHidden()
-                    .onChange(of: settings.manualYawDegrees) { _, newVal in
-                        if settings.trackingSource != .manualDemo {
-                            settings.trackingSource = .manualDemo
-                        }
-                        settings.updateManualYaw(degrees: newVal)
+                        Text(String(format: "%+.1f°", settings.manualYawDegrees))
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(.cyan)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1.5)
+                            .background(Color.cyan.opacity(0.12))
+                            .clipShape(Capsule())
                     }
 
-                HStack {
-                    Text("← Look Left (-45°)")
-                        .font(.system(size: 9))
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text("Look Right (+45°) →")
-                        .font(.system(size: 9))
-                        .foregroundColor(.secondary)
+                    Slider(value: $settings.manualYawDegrees, in: -45...45, step: 0.5)
+                        .labelsHidden()
+                        .onChange(of: settings.manualYawDegrees) { _, newVal in
+                            settings.updateManualYaw(degrees: newVal)
+                        }
+
+                    HStack {
+                        Text("← Look Left (-45°)")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("Look Right (+45°) →")
+                            .font(.system(size: 9))
+                            .foregroundColor(.secondary)
+                    }
                 }
+                .padding(10)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 9)
+                        .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
+                )
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .move(edge: .top)),
+                    removal: .opacity.combined(with: .scale(scale: 0.95))
+                ))
             }
-            .padding(10)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 9))
-            .overlay(
-                RoundedRectangle(cornerRadius: 9)
-                    .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
-            )
 
             // 4. Configuration Preferences Card
             VStack(spacing: 10) {
@@ -305,6 +308,7 @@ public struct MenuBarView: View {
         }
         .padding(14)
         .frame(width: 380)
+        .animation(.easeInOut(duration: 0.22), value: settings.trackingSource)
     }
 
     private var isCustomThresholds: Bool {
