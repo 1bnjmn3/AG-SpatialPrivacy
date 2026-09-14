@@ -34,6 +34,7 @@ fi
 
 # Code sign (ad-hoc)
 echo "🔐 Ad-hoc code signing..."
+xattr -cr "${BUNDLE_DIR}"
 codesign --force --deep --sign - "${BUNDLE_DIR}"
 
 echo "✅ Successfully built ${BUNDLE_DIR}!"

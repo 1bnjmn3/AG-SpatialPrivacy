@@ -16,7 +16,7 @@ public final class BlurOverlayController: ObservableObject {
     public func setupWindows() {
         // Tear down old windows
         for window in overlayWindows {
-            window.orderOut(nil)
+            window.close()
         }
         overlayWindows.removeAll()
 
@@ -48,19 +48,6 @@ public final class BlurOverlayController: ObservableObject {
             self?.updateWindows(fraction: fraction, side: side, style: settings.blurStyle, featherWidth: settings.featherWidth)
         }
         .store(in: &cancellables)
-
-        settings.objectWillChange
-            .sink { [weak self] _ in
-                Task { @MainActor in
-                    self?.updateWindows(
-                        fraction: settings.currentBlurFraction,
-                        side: settings.currentSide,
-                        style: settings.blurStyle,
-                        featherWidth: settings.featherWidth
-                    )
-                }
-            }
-            .store(in: &cancellables)
     }
 
     private func updateWindows(fraction: Double, side: BlurSide, style: BlurStyle, featherWidth: Double) {

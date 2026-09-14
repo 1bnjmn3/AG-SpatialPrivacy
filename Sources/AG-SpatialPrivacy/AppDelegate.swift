@@ -66,7 +66,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showPopover(_ button: NSStatusBarButton) {
         if let hosting = popover.contentViewController as? NSHostingController<MenuBarView> {
-            let size = hosting.view.fittingSize
+            let size = hosting.sizeThatFits(in: NSSize(width: 360, height: 1000))
             let targetHeight = min(460, max(300, size.height))
             popover.contentSize = NSSize(width: 360, height: targetHeight)
         } else {

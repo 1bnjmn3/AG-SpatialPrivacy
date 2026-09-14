@@ -85,8 +85,11 @@ public final class BlurSettings: ObservableObject {
     public var blurStyle: BlurStyle {
         get { BlurStyle(rawValue: blurStyleRaw) ?? .frostedDark }
         set {
-            objectWillChange.send()
             blurStyleRaw = newValue.rawValue
+            // Force an update to the overlay windows
+            let current = currentSide
+            currentSide = .none
+            currentSide = current
         }
     }
 

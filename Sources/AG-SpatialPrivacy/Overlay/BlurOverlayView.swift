@@ -131,35 +131,31 @@ public final class BlurOverlayView: NSView {
             // Blur comes in from the left
             let edge = span
             let featherEnd = min(1.0, edge + featherFraction)
-
-            // Multi-stop smoothstep Hermite falloff
-            var colors: [CGColor] = [NSColor.white.cgColor]
-            var locations: [NSNumber] = [0.0]
-
-            if edge > 0.01 {
-                colors.append(NSColor.white.cgColor)
-                locations.append(NSNumber(value: edge))
-            }
-
             let steps = 6
             let spanRange = featherEnd - edge
-            if spanRange > 0.001 {
-                for i in 1..<steps {
-                    let t = Double(i) / Double(steps)
-                    let smoothAlpha = 1.0 - (t * t * (3.0 - 2.0 * t))
-                    let loc = edge + (t * spanRange)
-                    colors.append(NSColor(deviceWhite: 1.0, alpha: CGFloat(smoothAlpha)).cgColor)
-                    locations.append(NSNumber(value: loc))
-                }
+
+            var colors: [CGColor] = []
+            var locations: [NSNumber] = []
+
+            colors.append(NSColor.white.cgColor)
+            locations.append(0.0)
+
+            colors.append(NSColor.white.cgColor)
+            locations.append(NSNumber(value: edge))
+
+            for i in 1..<steps {
+                let t = Double(i) / Double(steps)
+                let smoothAlpha = 1.0 - (t * t * (3.0 - 2.0 * t))
+                let loc = edge + (t * spanRange)
+                colors.append(NSColor(deviceWhite: 1.0, alpha: CGFloat(smoothAlpha)).cgColor)
+                locations.append(NSNumber(value: loc))
             }
 
             colors.append(NSColor.clear.cgColor)
             locations.append(NSNumber(value: featherEnd))
 
-            if featherEnd < 0.999 {
-                colors.append(NSColor.clear.cgColor)
-                locations.append(1.0)
-            }
+            colors.append(NSColor.clear.cgColor)
+            locations.append(1.0)
 
             maskLayer.colors = colors
             maskLayer.locations = locations
@@ -173,37 +169,31 @@ public final class BlurOverlayView: NSView {
             // Blur comes in from the right
             let edge = 1.0 - span
             let featherStart = max(0.0, edge - featherFraction)
+            let steps = 6
+            let spanRange = edge - featherStart
 
             var colors: [CGColor] = []
             var locations: [NSNumber] = []
 
-            if featherStart > 0.001 {
-                colors.append(NSColor.clear.cgColor)
-                locations.append(0.0)
-            }
+            colors.append(NSColor.clear.cgColor)
+            locations.append(0.0)
 
             colors.append(NSColor.clear.cgColor)
             locations.append(NSNumber(value: featherStart))
 
-            let steps = 6
-            let spanRange = edge - featherStart
-            if spanRange > 0.001 {
-                for i in 1..<steps {
-                    let t = Double(i) / Double(steps)
-                    let smoothAlpha = t * t * (3.0 - 2.0 * t)
-                    let loc = featherStart + (t * spanRange)
-                    colors.append(NSColor(deviceWhite: 1.0, alpha: CGFloat(smoothAlpha)).cgColor)
-                    locations.append(NSNumber(value: loc))
-                }
+            for i in 1..<steps {
+                let t = Double(i) / Double(steps)
+                let smoothAlpha = t * t * (3.0 - 2.0 * t)
+                let loc = featherStart + (t * spanRange)
+                colors.append(NSColor(deviceWhite: 1.0, alpha: CGFloat(smoothAlpha)).cgColor)
+                locations.append(NSNumber(value: loc))
             }
 
             colors.append(NSColor.white.cgColor)
             locations.append(NSNumber(value: edge))
 
-            if edge < 0.999 {
-                colors.append(NSColor.white.cgColor)
-                locations.append(1.0)
-            }
+            colors.append(NSColor.white.cgColor)
+            locations.append(1.0)
 
             maskLayer.colors = colors
             maskLayer.locations = locations
@@ -214,11 +204,8 @@ public final class BlurOverlayView: NSView {
             specularLineLayer.opacity = Float(min(1.0, fraction * 1.5))
 
         case .full:
-            maskLayer.colors = [
-                NSColor.white.cgColor,
-                NSColor.white.cgColor
-            ]
-            maskLayer.locations = [0.0, 1.0]
+            maskLayer.colors = Array(repeating: NSColor.white.cgColor, count: 9)
+            maskLayer.locations = (0..<9).map { NSNumber(value: Double($0) / 8.0) }
             specularLineLayer.opacity = 0.0
 
         case .none:
