@@ -10,8 +10,8 @@ public struct AngleGaugeView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("HEAD ANGLE GAUGE")
-                    .font(.system(size: 10, weight: .bold))
+                Label("Head Orientation", systemImage: "person.badge.shield.checkmark")
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
 
                 Spacer()
@@ -19,9 +19,13 @@ public struct AngleGaugeView: View {
                 Text(angleDescription)
                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
                     .foregroundColor(statusColor)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(statusColor.opacity(0.12))
+                    .clipShape(Capsule())
             }
 
-            // Gauge Bar
+            // Gauge Bar Track
             GeometryReader { geo in
                 let w = geo.size.width
                 let h = geo.size.height
@@ -32,95 +36,105 @@ public struct AngleGaugeView: View {
                 let clampedAngle = max(-maxAngle, min(maxAngle, settings.currentYawDegrees))
                 let markerX = midX + (clampedAngle / maxAngle) * (w / 2.0)
 
-                // Deadzone regions
-                let deadzoneWidth = (settings.deadzoneDegrees / maxAngle) * (w / 2.0)
+                // Deadzone safe region width
+                let deadzoneHalfWidth = (settings.deadzoneDegrees / maxAngle) * (w / 2.0)
 
                 ZStack(alignment: .leading) {
-                    // Background track
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(NSColor.controlBackgroundColor))
+                    // 1. Dark/Subtle track background
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(Color(NSColor.windowBackgroundColor).opacity(0.85))
 
-                    // Deadzone safe center zone
-                    Rectangle()
-                        .fill(Color.green.opacity(0.20))
-                        .frame(width: deadzoneWidth * 2, height: h)
+                    // 2. Deadzone safe region in center
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.green.opacity(0.18))
+                        .frame(width: max(8, deadzoneHalfWidth * 2), height: h - 4)
                         .position(x: midX, y: h / 2)
 
-                    // Blur active fill
-                    if settings.currentBlurFraction > 0.01 {
+                    // 3. Dynamic blur fill
+                    if settings.isEnabled && settings.currentBlurFraction > 0.01 {
                         if settings.currentSide == .left {
                             // Left side blur active
+                            let blurW = w * CGFloat(settings.currentBlurFraction) * 0.5
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(LinearGradient(colors: [.blue.opacity(0.6), .blue.opacity(0.1)], startPoint: .leading, endPoint: .trailing))
-                                .frame(width: w * CGFloat(settings.currentBlurFraction) * 0.5, height: h)
-                                .position(x: (w * CGFloat(settings.currentBlurFraction) * 0.5) / 2, y: h / 2)
+                                .fill(LinearGradient(
+                                    colors: [.cyan.opacity(0.75), .blue.opacity(0.15)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ))
+                                .frame(width: blurW, height: h)
+                                .position(x: blurW / 2, y: h / 2)
                         } else if settings.currentSide == .right {
                             // Right side blur active
                             let blurW = w * CGFloat(settings.currentBlurFraction) * 0.5
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(LinearGradient(colors: [.blue.opacity(0.1), .blue.opacity(0.6)], startPoint: .leading, endPoint: .trailing))
+                                .fill(LinearGradient(
+                                    colors: [.blue.opacity(0.15), .cyan.opacity(0.75)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ))
                                 .frame(width: blurW, height: h)
                                 .position(x: w - blurW / 2, y: h / 2)
                         } else if settings.currentSide == .full {
                             RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.orange.opacity(0.4))
+                                .fill(Color.orange.opacity(0.45))
                                 .frame(width: w, height: h)
                         }
                     }
 
-                    // Center 0° line
+                    // 4. Center 0° tick line
                     Rectangle()
-                        .fill(Color.secondary.opacity(0.6))
-                        .frame(width: 1.5, height: h)
+                        .fill(Color.secondary.opacity(0.4))
+                        .frame(width: 1.5, height: h - 4)
                         .position(x: midX, y: h / 2)
 
-                    // Moving Head marker
+                    // 5. Head Position Marker with spring animation
                     Circle()
-                        .fill(statusColor)
-                        .frame(width: 12, height: 12)
-                        .shadow(radius: 2)
-                        .position(x: max(6, min(w - 6, markerX)), y: h / 2)
+                        .fill(markerColor)
+                        .frame(width: 13, height: 13)
+                        .shadow(color: markerColor.opacity(0.4), radius: 3, x: 0, y: 1)
+                        .position(x: max(7, min(w - 7, markerX)), y: h / 2)
+                        .animation(.interactiveSpring(response: 0.18, dampingFraction: 0.75), value: markerX)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .clipShape(RoundedRectangle(cornerRadius: 7))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 7)
+                        .stroke(Color.secondary.opacity(0.18), lineWidth: 1)
                 )
             }
-            .frame(height: 18)
+            .frame(height: 20)
 
-            // Labels under gauge
+            // Scale Labels
             HStack {
-                Text("← Left 50°")
-                    .font(.system(size: 9))
+                Text("← 50° L")
+                    .font(.system(size: 9, weight: .medium))
                     .foregroundColor(.secondary)
                 Spacer()
-                Text("Center (0°)")
-                    .font(.system(size: 9))
+                Text("Center 0°")
+                    .font(.system(size: 9, weight: .medium))
                     .foregroundColor(.secondary)
                 Spacer()
-                Text("Right 50° →")
-                    .font(.system(size: 9))
+                Text("50° R →")
+                    .font(.system(size: 9, weight: .medium))
                     .foregroundColor(.secondary)
             }
         }
     }
 
     private var angleDescription: String {
-        let deg = settings.currentYawDegrees
-        let sideStr: String
-        if abs(deg) <= settings.deadzoneDegrees {
-            sideStr = "Facing Screen"
-        } else if deg > 0 {
-            sideStr = String(format: "+%.1f° Right", deg)
-        } else {
-            sideStr = String(format: "%.1f° Left", deg)
+        guard settings.isEnabled else {
+            return "Paused"
         }
 
+        let deg = settings.currentYawDegrees
+        if abs(deg) <= settings.deadzoneDegrees {
+            return "Facing (0°)"
+        }
+
+        let dirStr = deg > 0 ? String(format: "+%.1f° R", deg) : String(format: "%.1f° L", deg)
         if settings.currentBlurFraction > 0.01 {
-            return "\(sideStr) (Blur: \(Int(settings.currentBlurFraction * 100))%)"
+            return "\(dirStr) · \(Int(settings.currentBlurFraction * 100))% Blur"
         } else {
-            return "\(sideStr) (Clear)"
+            return "\(dirStr) · Clear"
         }
     }
 
@@ -128,7 +142,17 @@ public struct AngleGaugeView: View {
         if !settings.isEnabled {
             return .secondary
         } else if settings.currentBlurFraction > 0.01 {
-            return .blue
+            return .cyan
+        } else {
+            return .green
+        }
+    }
+
+    private var markerColor: Color {
+        if !settings.isEnabled {
+            return .secondary
+        } else if settings.currentBlurFraction > 0.01 {
+            return .cyan
         } else {
             return .green
         }

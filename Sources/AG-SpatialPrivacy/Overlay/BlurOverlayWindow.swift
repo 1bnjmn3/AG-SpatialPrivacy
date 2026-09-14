@@ -41,7 +41,7 @@ public final class BlurOverlayWindow: NSWindow {
         contentView = blurView
 
         // Apply hardware compositor blur via SkyLight if available
-        applySkyLightBlur(radius: 40)
+        applySkyLightBlur(radius: 64)
     }
 
     public func applySkyLightBlur(radius: Int) {

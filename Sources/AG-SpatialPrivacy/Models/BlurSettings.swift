@@ -69,6 +69,7 @@ public final class BlurSettings: ObservableObject {
         set {
             objectWillChange.send()
             trackingSourceRaw = newValue.rawValue
+            resetAngles()
         }
     }
 
@@ -77,6 +78,7 @@ public final class BlurSettings: ObservableObject {
         set {
             objectWillChange.send()
             blurDirectionModeRaw = newValue.rawValue
+            recalculateBlur(effectiveDeg: currentYawDegrees)
         }
     }
 
@@ -100,8 +102,26 @@ public final class BlurSettings: ObservableObject {
 
     private init() {}
 
+    public func resetAngles() {
+        manualYawDegrees = 0.0
+        rawYawDegrees = 0.0
+        currentYawDegrees = 0.0
+        currentBlurFraction = 0.0
+        currentSide = .none
+        referenceYaw = 0.0
+    }
+
     public func calibrateCenter() {
         referenceYaw = rawYawDegrees * .pi / 180.0
+        if trackingSource == .manualDemo {
+            resetAngles()
+        }
+    }
+
+    public func updateManualYaw(degrees: Double) {
+        manualYawDegrees = degrees
+        currentYawDegrees = degrees
+        recalculateBlur(effectiveDeg: degrees)
     }
 
     public func updateRawYaw(radians: Double) {
@@ -118,8 +138,10 @@ public final class BlurSettings: ObservableObject {
         }
 
         currentYawDegrees = effectiveDeg
+        recalculateBlur(effectiveDeg: effectiveDeg)
+    }
 
-        // Calculate blur amount based on deadzone and sensitivity
+    public func recalculateBlur(effectiveDeg: Double) {
         let absDeg = abs(effectiveDeg)
         if !isEnabled || absDeg <= deadzoneDegrees {
             currentBlurFraction = 0.0

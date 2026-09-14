@@ -1,4 +1,4 @@
-# AG-SpatialPrivacy 🛡️👀
+# AG-SpatialPrivacy 🛡️
 
 > **Spatial Privacy for macOS**: Dynamic screen blur that hides what you're working on when you look away, using AirPods head-tracking and camera fallback. Inspired by [@bryllim_](https://x.com/bryllim_/status/2099049704822907277).
 

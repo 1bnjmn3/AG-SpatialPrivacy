@@ -6,18 +6,24 @@ public struct MenuBarView: View {
     public init() {}
 
     public var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             // Header Bar
-            HStack {
+            HStack(spacing: 10) {
                 Image(systemName: "shield.lefthalf.filled")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.accentColor)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.blue, .cyan],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
 
-                VStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text("AG-SpatialPrivacy")
-                        .font(.system(size: 13, weight: .bold))
-                    Text("AirPods Head-Tracking Privacy Screen")
-                        .font(.system(size: 10))
+                        .font(.system(size: 14, weight: .bold))
+                    Text("Spatial Gaze Privacy for macOS")
+                        .font(.system(size: 10.5))
                         .foregroundColor(.secondary)
                 }
 
@@ -26,20 +32,22 @@ public struct MenuBarView: View {
                 Toggle("", isOn: $settings.isEnabled)
                     .toggleStyle(.switch)
                     .labelsHidden()
+                    .onChange(of: settings.isEnabled) { _, _ in
+                        settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                    }
             }
-            .padding(.bottom, 2)
+            .padding(.horizontal, 4)
 
-            Divider()
-
-            // Status Card
-            HStack {
-                HStack(spacing: 6) {
+            // 1. Device Status & Calibration Card
+            HStack(spacing: 10) {
+                HStack(spacing: 7) {
                     Circle()
                         .fill(connectionColor)
                         .frame(width: 8, height: 8)
+                        .shadow(color: connectionColor.opacity(0.6), radius: 3)
 
                     Text(connectionText)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 11.5, weight: .medium))
                 }
 
                 Spacer()
@@ -48,55 +56,79 @@ public struct MenuBarView: View {
                     settings.calibrateCenter()
                 }) {
                     Label("Calibrate Center", systemImage: "scope")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11, weight: .medium))
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
             }
-            .padding(8)
+            .padding(10)
             .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
-            .cornerRadius(8)
+            .clipShape(RoundedRectangle(cornerRadius: 9))
+            .overlay(
+                RoundedRectangle(cornerRadius: 9)
+                    .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
+            )
 
-            // Live Angle Gauge
+            // 2. Live Head Orientation Gauge Card
             AngleGaugeView(settings: settings)
+                .padding(10)
+                .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 9)
+                        .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
+                )
 
-            // Manual Simulation Slider (Always accessible or when in manualDemo mode)
-            VStack(alignment: .leading, spacing: 4) {
+            // 3. Test Simulation Slider Card
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("Test Simulation Slider")
-                        .font(.system(size: 11, weight: .medium))
+                    Label("Test Simulation Slider", systemImage: "slider.horizontal.3")
+                        .font(.system(size: 11.5, weight: .semibold))
+
                     Spacer()
-                    Text(String(format: "%.1f°", settings.manualYawDegrees))
-                        .font(.system(size: 10, design: .monospaced))
+
+                    Text(String(format: "%+.1f°", settings.manualYawDegrees))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(.cyan)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1.5)
+                        .background(Color.cyan.opacity(0.12))
+                        .clipShape(Capsule())
+                }
+
+                Slider(value: $settings.manualYawDegrees, in: -45...45, step: 0.5)
+                    .labelsHidden()
+                    .onChange(of: settings.manualYawDegrees) { _, newVal in
+                        if settings.trackingSource != .manualDemo {
+                            settings.trackingSource = .manualDemo
+                        }
+                        settings.updateManualYaw(degrees: newVal)
+                    }
+
+                HStack {
+                    Text("← Look Left (-45°)")
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("Look Right (+45°) →")
+                        .font(.system(size: 9))
                         .foregroundColor(.secondary)
                 }
-
-                Slider(value: $settings.manualYawDegrees, in: -45...45, step: 0.5) {
-                    Text("Test Slider")
-                } onEditingChanged: { isEditing in
-                    if isEditing && settings.trackingSource != .manualDemo {
-                        settings.trackingSource = .manualDemo
-                    }
-                    settings.updateRawYaw(radians: settings.manualYawDegrees * .pi / 180.0)
-                }
-                .onChange(of: settings.manualYawDegrees) { _, newVal in
-                    if settings.trackingSource == .manualDemo {
-                        settings.updateRawYaw(radians: newVal * .pi / 180.0)
-                    }
-                }
             }
-            .padding(8)
-            .background(Color(NSColor.controlBackgroundColor).opacity(0.4))
-            .cornerRadius(8)
+            .padding(10)
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 9))
+            .overlay(
+                RoundedRectangle(cornerRadius: 9)
+                    .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
+            )
 
-            Divider()
-
-            // Settings Controls
-            VStack(alignment: .leading, spacing: 10) {
-                // Tracking Source
+            // 4. Configuration Preferences Card
+            VStack(spacing: 10) {
+                // Tracking Source Picker
                 HStack {
-                    Text("Tracking Source")
-                        .font(.system(size: 11))
+                    Label("Tracking Source", systemImage: "antenna.radiowaves.left.and.right")
+                        .font(.system(size: 11.5))
                     Spacer()
                     Picker("", selection: $settings.trackingSource) {
                         ForEach(TrackingSource.allCases) { source in
@@ -105,16 +137,18 @@ public struct MenuBarView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(width: 170)
+                    .frame(minWidth: 180, maxWidth: 200)
                     .onChange(of: settings.trackingSource) { _, newSource in
                         handleTrackingSourceChange(newSource)
                     }
                 }
 
-                // Blur Mode
+                Divider()
+
+                // Privacy Mode Picker
                 HStack {
-                    Text("Privacy Mode")
-                        .font(.system(size: 11))
+                    Label("Privacy Mode", systemImage: "lock.shield")
+                        .font(.system(size: 11.5))
                     Spacer()
                     Picker("", selection: $settings.blurDirectionMode) {
                         ForEach(BlurDirectionMode.allCases) { mode in
@@ -122,13 +156,15 @@ public struct MenuBarView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(width: 170)
+                    .frame(minWidth: 180, maxWidth: 200)
                 }
 
-                // Blur Style
+                Divider()
+
+                // Blur Appearance Style Picker
                 HStack {
-                    Text("Blur Appearance")
-                        .font(.system(size: 11))
+                    Label("Blur Appearance", systemImage: "sparkles")
+                        .font(.system(size: 11.5))
                     Spacer()
                     Picker("", selection: $settings.blurStyle) {
                         ForEach(BlurStyle.allCases) { style in
@@ -136,45 +172,65 @@ public struct MenuBarView: View {
                         }
                     }
                     .pickerStyle(.menu)
-                    .frame(width: 170)
+                    .frame(minWidth: 180, maxWidth: 200)
                 }
 
-                // Sensitivity Slider
-                VStack(alignment: .leading, spacing: 2) {
+                Divider()
+
+                // Sensitivity Threshold Slider
+                VStack(spacing: 3) {
                     HStack {
-                        Text("Sensitivity (Threshold)")
-                            .font(.system(size: 11))
+                        Label("Sensitivity (Threshold)", systemImage: "speedometer")
+                            .font(.system(size: 11.5))
                         Spacer()
                         Text("\(Int(settings.sensitivityDegrees))°")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
                             .foregroundColor(.secondary)
                     }
                     Slider(value: $settings.sensitivityDegrees, in: 10...60, step: 1)
+                        .labelsHidden()
+                        .onChange(of: settings.sensitivityDegrees) { _, _ in
+                            settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                        }
                 }
 
-                // Deadzone Slider
-                VStack(alignment: .leading, spacing: 2) {
+                Divider()
+
+                // Center Deadzone Slider
+                VStack(spacing: 3) {
                     HStack {
-                        Text("Center Deadzone")
-                            .font(.system(size: 11))
+                        Label("Center Deadzone", systemImage: "circle.circle")
+                            .font(.system(size: 11.5))
                         Spacer()
                         Text("\(Int(settings.deadzoneDegrees))°")
-                            .font(.system(size: 10, design: .monospaced))
+                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
                             .foregroundColor(.secondary)
                     }
                     Slider(value: $settings.deadzoneDegrees, in: 1...15, step: 1)
+                        .labelsHidden()
+                        .onChange(of: settings.deadzoneDegrees) { _, _ in
+                            settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                        }
                 }
             }
+            .padding(10)
+            .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 9))
+            .overlay(
+                RoundedRectangle(cornerRadius: 9)
+                    .stroke(Color(NSColor.separatorColor).opacity(0.3), lineWidth: 0.5)
+            )
 
-            Divider()
-
-            // Footer
+            // 5. Footer
             HStack {
                 Button(action: {
-                    settings.manualYawDegrees = 0
-                    settings.updateRawYaw(radians: 0)
+                    settings.resetAngles()
+                    settings.sensitivityDegrees = 30.0
+                    settings.deadzoneDegrees = 5.0
+                    settings.blurDirectionMode = .oppositeGaze
+                    settings.blurStyle = .frostedDark
                 }) {
-                    Text("Reset")
+                    Text("Reset Defaults")
                         .font(.system(size: 11))
                 }
                 .buttonStyle(.plain)
@@ -185,15 +241,17 @@ public struct MenuBarView: View {
                 Button(action: {
                     NSApplication.shared.terminate(nil)
                 }) {
-                    Text("Quit Mac Blur")
+                    Text("Quit AG-SpatialPrivacy")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.red.opacity(0.85))
                 }
                 .buttonStyle(.plain)
             }
+            .padding(.horizontal, 4)
+            .padding(.top, 2)
         }
         .padding(14)
-        .frame(width: 320)
+        .frame(width: 380)
     }
 
     private var connectionColor: Color {
@@ -219,13 +277,18 @@ public struct MenuBarView: View {
     }
 
     private func handleTrackingSourceChange(_ newSource: TrackingSource) {
+        settings.resetAngles()
+
         if newSource == .camera {
+            AirPodsTracker.shared.stop()
             CameraFaceTracker.shared.start()
-        } else {
+        } else if newSource == .airpods {
             CameraFaceTracker.shared.stop()
-        }
-        if newSource == .airpods {
             AirPodsTracker.shared.start()
+        } else {
+            // Manual Demo
+            AirPodsTracker.shared.stop()
+            CameraFaceTracker.shared.stop()
         }
     }
 }
