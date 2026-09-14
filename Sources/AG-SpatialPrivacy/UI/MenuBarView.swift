@@ -183,6 +183,18 @@ public struct MenuBarView: View {
                         Label("Sensitivity (Threshold)", systemImage: "speedometer")
                             .font(.system(size: 11.5))
                         Spacer()
+                        if settings.sensitivityDegrees != 30.0 {
+                            Button(action: {
+                                settings.sensitivityDegrees = 30.0
+                                settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                            }) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(.cyan)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Reset sensitivity to default (30°)")
+                        }
                         Text("\(Int(settings.sensitivityDegrees))°")
                             .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
                             .foregroundColor(.secondary)
@@ -202,6 +214,18 @@ public struct MenuBarView: View {
                         Label("Center Deadzone", systemImage: "circle.circle")
                             .font(.system(size: 11.5))
                         Spacer()
+                        if settings.deadzoneDegrees != 5.0 {
+                            Button(action: {
+                                settings.deadzoneDegrees = 5.0
+                                settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                            }) {
+                                Image(systemName: "arrow.counterclockwise")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(.cyan)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Reset deadzone to default (5°)")
+                        }
                         Text("\(Int(settings.deadzoneDegrees))°")
                             .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
                             .foregroundColor(.secondary)
@@ -212,6 +236,35 @@ public struct MenuBarView: View {
                             settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
                         }
                 }
+
+                // Default Reset Button for Sliders
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        settings.sensitivityDegrees = 30.0
+                        settings.deadzoneDegrees = 5.0
+                        settings.recalculateBlur(effectiveDeg: settings.currentYawDegrees)
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 9, weight: .bold))
+                            Text("Reset to Defaults (30° / 5°)")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(isCustomThresholds ? .cyan : .secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(NSColor.windowBackgroundColor).opacity(0.8))
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(isCustomThresholds ? Color.cyan.opacity(0.35) : Color.secondary.opacity(0.2), lineWidth: 0.5)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!isCustomThresholds)
+                }
+                .padding(.top, 2)
             }
             .padding(10)
             .background(Color(NSColor.controlBackgroundColor).opacity(0.6))
@@ -252,6 +305,10 @@ public struct MenuBarView: View {
         }
         .padding(14)
         .frame(width: 380)
+    }
+
+    private var isCustomThresholds: Bool {
+        settings.sensitivityDegrees != 30.0 || settings.deadzoneDegrees != 5.0
     }
 
     private var connectionColor: Color {
